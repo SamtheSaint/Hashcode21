@@ -1,4 +1,5 @@
-# .out
+.out
 **env**
-.vscode
-# outputs
+.vscode/
+outputs/
+debug/
