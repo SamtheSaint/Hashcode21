@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <cassert>
+#include <limits>
 
 using namespace std;
 
@@ -27,7 +28,7 @@ struct intersection {
   }
 };
 
-int get_interval(int total_street_cars, int total_intersection_cars, int street_length, int simulation_time);
+int get_interval(int total_street_cars, int min_street_cars, int total_intersection_cars, int street_length, int simulation_time);
 
 int main() {
   int D, I, S, V, F;
@@ -66,6 +67,13 @@ int main() {
         starting[street_name]++;
       }
     }
+    cin >> street_name;
+  }
+
+  for (auto& kv : cars) {
+    if (starting.find(kv.first) == starting.end()) {
+      starting[kv.first] = 0;
+    }
   }
 
 
@@ -85,19 +93,20 @@ int main() {
 
     sched_individual.push_back(to_string(i)); // intersection id
     sched_individual.push_back(to_string(incoming_streets.size()));
-
     // sort based on number of cars that start
     sort(incoming_streets.begin(), incoming_streets.end(), [&starting](const street* a, const street* b) {
-      return starting[a->name] - starting[b->name];
+      return starting[a->name] > starting[b->name];
       });
-
     int total_intersection_cars = 0;
+    int min_street_cars = numeric_limits<int>::max();
     for (const auto& street : incoming_streets) {
-      cerr << street->name << " " << cars[street->name] << endl;
       total_intersection_cars += cars[street->name];
+      if (cars[street->name] < min_street_cars) {
+        min_street_cars = cars[street->name];
+      }
     }
     for (const auto& street : incoming_streets) {
-      int time_interval = get_interval(cars[street->name], total_intersection_cars, street->L, D);
+      int time_interval = get_interval(cars[street->name], min_street_cars, total_intersection_cars, street->L, D);
       sched_individual.push_back(street->name + " " + to_string(time_interval));
     }
 
@@ -113,18 +122,25 @@ int main() {
 
 }
 
-int get_interval(int total_street_cars, int total_intersection_cars, int street_length, int simulation_time) {
+int get_interval(int total_street_cars, int min_street_cars, int total_intersection_cars, int street_length, int simulation_time) {
 
   // cerr << total_street_cars << " " << total_intersection_cars << endl;
 
   if (total_street_cars == total_intersection_cars) return 1;
   if (total_street_cars == 0) return 0;
-
+  
+  int interval;
   float intersection_ratio = (float)total_street_cars / (float)total_intersection_cars;
-
-  int interval = (int)intersection_ratio / (float)street_length;
-
-  // cerr << interval << endl;
+  
+  if (intersection_ratio < 0.0005) interval = 1;
+  if (intersection_ratio < 0.05) interval = 1;
+  if (intersection_ratio < 0.25) interval = 2;
+  if (intersection_ratio < 0.5) interval = 4;
+  if (intersection_ratio < 0.75) interval = 8;
+  if (intersection_ratio < 1) interval = 16;
+  if (interval > simulation_time) {
+    interval = 4;
+  }
 
   assert(interval <= simulation_time);
   assert(interval >= 0);
