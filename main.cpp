@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <algorithm>
+#include <cassert>
 
 using namespace std;
 
@@ -26,6 +27,7 @@ struct intersection {
   }
 };
 
+int get_interval(int total_street_cars, int total_intersection_cars, int street_length, int simulation_time);
 
 int main() {
   int D, I, S, V, F;
@@ -67,7 +69,6 @@ int main() {
   }
 
 
-  // int counter = 0; // Tracks number of intersections being scheduled
   vector<vector<string>> schedule;
 
   // Processing
@@ -85,25 +86,22 @@ int main() {
     sched_individual.push_back(to_string(i)); // intersection id
     sched_individual.push_back(to_string(incoming_streets.size()));
 
-    // sort based on number of starts
+    // sort based on number of cars that start
     sort(incoming_streets.begin(), incoming_streets.end(), [&starting](const street* a, const street* b) {
-      return starting[b->name] - starting[a->name];
+      return starting[a->name] - starting[b->name];
       });
 
+    int total_intersection_cars = 0;
     for (const auto& street : incoming_streets) {
-      int time_interval = 1;
+      cerr << street->name << " " << cars[street->name] << endl;
+      total_intersection_cars += cars[street->name];
+    }
+    for (const auto& street : incoming_streets) {
+      int time_interval = get_interval(cars[street->name], total_intersection_cars, street->L, D);
       sched_individual.push_back(street->name + " " + to_string(time_interval));
     }
 
     schedule.push_back(sched_individual);
-
-    // if (incoming_streets.size() == 1) { // If there is only a single street coming into the intersection
-    //   sched_individual.push_back("1");
-    //   sched_individual.push_back(((incoming_streets[0])->name) + " 1");
-    // }
-    // else {
-    //   //   vector<street*> streets = s->in;
-    // }
   }
 
 
@@ -113,12 +111,23 @@ int main() {
     for (const string& line : sched_individual) cout << line << endl;
   }
 
-  cout << "some random crap" << endl;
+}
 
-  // for (int i = 0; i < schedule.size(); i++) {
-  //   vector<string> sched_indvidual = schedule[i];
-  //   for (int j = 0; j < sched_individual.size(); j++) {
-  //     cout << sched_indvidual[j] << endl;
-  //   }
-  // }
+int get_interval(int total_street_cars, int total_intersection_cars, int street_length, int simulation_time) {
+
+  // cerr << total_street_cars << " " << total_intersection_cars << endl;
+
+  if (total_street_cars == total_intersection_cars) return 1;
+  if (total_street_cars == 0) return 0;
+
+  float intersection_ratio = (float)total_street_cars / (float)total_intersection_cars;
+
+  int interval = (int)intersection_ratio / (float)street_length;
+
+  // cerr << interval << endl;
+
+  assert(interval <= simulation_time);
+  assert(interval >= 0);
+
+  return interval;
 }
