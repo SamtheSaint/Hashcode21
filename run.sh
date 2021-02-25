@@ -1,3 +1,3 @@
-g++ main.cpp
+g++ main.cpp -o a.out
 
-$1.in > ./a.out > outputs/$1.out
+inputs/$1.txt > ./a.out > outputs/$1.txt
